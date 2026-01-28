@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARC Raiders Trophy Tracker</title>
+    <style>
+        :root {
+            --bg: #0a0b0d; 
+            --card-bg: #14161a;
+            --header-bg: #1c1f26;
+            --accent: #f5c451; 
+            --text: #e1e1e1;
+            --text-dim: #888da0;
+            --green: #00ff42; 
+            --blue: #0047ff;  
+            --cyan: #00fbff;  
+            --yellow: #ffcc00; 
+            --border: #2d323d;
+            --progress-bg: #1c1f26;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero-banner {
+            width: 100%;
+            max-width: 900px;
+            position: relative;
+            line-height: 0;
+            margin-bottom: -40px; 
+            z-index: 1;
+        }
+        .hero-banner img { width: 100%; border-radius: 0 0 12px 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+
+        .container { 
+            max-width: 850px; 
+            width: 95%; 
+            position: relative; 
+            z-index: 2;
+            padding-bottom: 50px;
+        }
+
+        .user-header {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        #username-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--border);
+            color: var(--accent);
+            font-size: 1.8rem;
+            text-align: center;
+            font-weight: 900;
+            outline: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .global-progress-hud {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        .global-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+        .score-box { display: flex; gap: 15px; }
+        .score-actual { color: var(--green); }
+        .score-potential { color: var(--yellow); }
+
+        .global-bar-container {
+            background: #000;
+            height: 18px;
+            border-radius: 9px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        .global-bar-potential {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 0%;
+            background: var(--yellow);
+            opacity: 0.3;
+            transition: width 0.6s ease;
+        }
+        .global-bar-fill {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--blue), var(--cyan), var(--green));
+            transition: width 0.6s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 66, 0.2);
+            z-index: 2;
+        }
+
+        .stage-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 30px; overflow: hidden; }
+        .stage-header { background: var(--header-bg); padding: 20px; border-bottom: 1px solid var(--border); }
+        .stage-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .stage-name { font-size: 1.1rem; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        .stage-percent { font-family: monospace; color: var(--accent); font-weight: bold; font-size: 1.1rem; }
+        .progress-container { background: var(--progress-bg); height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; transition: width 0.8s cubic-bezier(0.2, 1, 0.2, 1); }
+
+        .stage-0 .progress-fill { background: var(--blue); }
+        .stage-1 .progress-fill { background: var(--cyan); }
+        .stage-2 .progress-fill { background: var(--green); }
+        .stage-3 .progress-fill, .stage-4 .progress-fill { background: var(--accent); }
+
+        .item-table { width: 100%; border-collapse: collapse; }
+        .item-row { border-bottom: 1px solid var(--border); }
+        td { padding: 15px; vertical-align: middle; }
+        .icon-box { width: 54px; height: 54px; background: #000; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .icon-box img { width: 90%; height: 90%; object-fit: contain; }
+        .item-info { display: flex; flex-direction: column; }
+        .item-name { font-weight: 700; color: #fff; transition: color 0.3s; }
+        .item-reward { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+        
+        .inputs-cell { display: flex; gap: 15px; justify-content: flex-end; align-items: center; }
+        .input-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .input-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; font-weight: 900; }
+        
+        input[type="number"] { 
+            background: #1c1f26; 
+            border: 1px solid var(--border); 
+            color: #fff; 
+            width: 45px; 
+            padding: 8px 4px; 
+            border-radius: 4px; 
+            text-align: center; 
+            font-size: 1rem; 
+            font-weight: 900; 
+        }
+        input::-webkit-inner-spin-button { display: none; }
+        
+        /* Transfer Arrow Styling */
+        .transfer-btn {
+            background: transparent;
+            border: 1px solid #333;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-top: 15px;
+            transition: 0.2s;
+        }
+        .transfer-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+        .item-progress-mini { height: 3px; background: var(--progress-bg); margin-top: 8px; border-radius: 2px; width: 100%; }
+        .item-progress-fill { height: 100%; background: #333; width: 0%; transition: width 0.3s, background-color 0.3s; }
+        
+        .has-stash .item-progress-fill { background: var(--yellow); box-shadow: 0 0 5px rgba(255, 204, 0, 0.4); }
+        .ready .item-progress-fill { background: var(--green) !important; box-shadow: 0 0 8px var(--green); }
+        .ready .item-name { color: var(--green); }
+    </style>
+</head>
+<body>
+
+<div class="hero-banner">
+    <img src="header.jpg" alt="ARC Raiders">
+</div>
+
+<div class="container">
+    <div class="user-header">
+        <input type="text" id="username-input" placeholder="ENTER RAIDER NAME" oninput="saveUser(this.value)">
+        
+        <div class="global-progress-hud">
+            <div class="global-label">
+                <span>Mission Progression (Total Units)</span>
+                <div class="score-box">
+                    <span class="score-actual">DONE: <span id="global-percent-actual">0%</span></span>
+                    <span class="score-potential">PROJECTED: <span id="global-percent-potential">0%</span></span>
+                </div>
+            </div>
+            <div class="global-bar-container">
+                <div class="global-bar-potential" id="global-bar-potential"></div>
+                <div class="global-bar-fill" id="global-bar-actual"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tracker-root"></div>
+</div>
+
+<script>
+    const data = [
+        {
+            stage: "Roaming Threats (1/5)",
+            items: [
+                { name: "Rusted Bolts", needed: 3, reward: "Mod Components (x10)", img: "Rusted_Bolts.png" },
+                { name: "Pop Trigger", needed: 15, reward: "Power Rods (x3)", img: "Pop_Trigger.png" },
+                { name: "Tick Pod", needed: 15, reward: "Raider Tokens (x10)", img: "Tick_Pod.png" },
+                { name: "Surveyor Vault", needed: 5, reward: "Light Gun BP", img: "Surveyor_Vault.png" }
+            ]
+        },
+        {
+            stage: "Soaring Menaces (2/5)",
+            items: [
+                { name: "Spotter Relay", needed: 10, reward: "Vita Spray (x3)", img: "Spotter_Relay.png" },
+                { name: "Expired Respirator", needed: 3, reward: "Photoelectric Cloak (x3)", img: "Expired_Respirator.png" },
+                { name: "Wasp Driver", needed: 20, reward: "Raider Tokens (x20)", img: "Wasp_Driver.png" },
+                { name: "Hornet Driver", needed: 15, reward: "Vita Shot BP", img: "Hornet_Driver.png" }
+            ]
+        },
+        {
+            stage: "Ferocious Foes (3/5)",
+            items: [
+                { name: "ARC Performance Steel", needed: 10, reward: "Kinetic Converter", img: "ARC_Performance_Steel.png" },
+                { name: "Shredder Gyro", needed: 5, reward: "Anvil Splitter (x3)", img: "Shredder_Gyro.png" },
+                { name: "Leaper Pulse Unit", needed: 10, reward: "Raider Tokens (x30)", img: "Leaper_Pulse_Unit.png" },
+                { name: "Bastion Cell", needed: 5, reward: "Shotgun Silencer BP", img: "Bastion_Cell.png" }
+            ]
+        },
+        {
+            stage: "Dominant Dangers (4/5)",
+            items: [
+                { name: "ARC Synthetic Resin", needed: 10, reward: "Bobcat IV", img: "ARC_Synthetic_Resin.png" },
+                { name: "Magnetic Accelerator", needed: 10, reward: "Wolfpack (x5)", img: "Magnetic_Accelerator.png" },
+                { name: "Rocketeer Driver", needed: 8, reward: "Raider Tokens (x40)", img: "Rocketeer_Driver.png" },
+                { name: "Queen Reactor", needed: 3, reward: "Bobcat BP", img: "Queen_Reactor.png" }
+            ]
+        },
+        {
+            stage: "Imposing Behemoths (5/5)",
+            items: [
+                { name: "Exodus Modules", needed: 5, reward: "Snap Hook (x2)", img: "Exodus_Modules.png" },
+                { name: "Geiger Counter", needed: 3, reward: "Aphelion", img: "Geiger_Counter.png" },
+                { name: "Bombardier Cell", needed: 8, reward: "Raider Tokens (x50)", img: "Bombardier_Cell.png" },
+                { name: "Matriarch Reactor", needed: 3, reward: "Snap Hook BP", img: "Matriarch_Reactor.png" }
+            ]
+        }
+    ];
+
+    function saveUser(val) { localStorage.setItem('arc_username', val); }
+
+    function moveItems(safeName, stageId) {
+        const stashIn = document.getElementById(`have-${safeName}`);
+        const depotIn = document.getElementById(`turned-${safeName}`);
+        const needed = parseInt(document.getElementById(`goal-${safeName}`).innerText);
+        
+        let stashVal = parseInt(stashIn.value) || 0;
+        let depotVal = parseInt(depotIn.value) || 0;
+
+        if (stashVal > 0) {
+            depotIn.value = depotVal + stashVal;
+            stashIn.value = 0;
+            saveValue(`turned-${safeName}`, depotIn.value, stageId);
+            saveValue(`have-${safeName}`, 0, stageId);
+        }
+    }
+
+    function saveValue(key, val, stageId) {
+        localStorage.setItem(key, val);
+        updateProgress(stageId);
+        updateGlobal();
+    }
+
+    function updateProgress(stageId) {
+        const stage = data[stageId];
+        let completedItems = 0;
+
+        stage.items.forEach(item => {
+            const safeName = item.name.replace(/[^a-zA-Z0-9]/g, '-');
+            const turned = parseInt(document.getElementById(`turned-${safeName}`).value) || 0;
+            const have = parseInt(document.getElementById(`have-${safeName}`).value) || 0;
+            const currentTotal = turned + have;
+            const row = document.getElementById(`row-${safeName}`);
+            
+            const itemPercent = Math.min((currentTotal / item.needed) * 100, 100);
+            document.getElementById(`bar-${safeName}`).style.width = itemPercent + "%";
+            
+            row.classList.remove('has-stash', 'ready');
+            if (currentTotal >= item.needed) {
+                row.classList.add('ready');
+                completedItems++;
+            } else if (have > 0) {
+                row.classList.add('has-stash');
+            }
+        });
+
+        const stagePercent = Math.round((completedItems / stage.items.length) * 100);
+        document.getElementById(`stage-progress-${stageId}`).style.width = stagePercent + "%";
+        document.getElementById(`stage-val-${stageId}`).innerText = stagePercent + "%";
+    }
+
+    function updateGlobal() {
+        let totalUnitsNeeded = 0;
+        let unitsInDepot = 0;
+        let unitsInTotal = 0;
+
+        data.forEach(stage => {
+            stage.items.forEach(item => {
+                const safeName = item.name.replace(/[^a-zA-Z0-9]/g, '-');
+                const turned = parseInt(localStorage.getItem(`turned-${safeName}`)) || 0;
+                const have = parseInt(localStorage.getItem(`have-${safeName}`)) || 0;
+                
+                totalUnitsNeeded += item.needed;
+                // Cap progress at the goal so extra items don't break the bar %
+                unitsInDepot += Math.min(turned, item.needed);
+                unitsInTotal += Math.min((turned + have), item.needed);
+            });
+        });
+
+        const actualPercent = Math.round((unitsInDepot / totalUnitsNeeded) * 100) || 0;
+        const potentialPercent = Math.round((unitsInTotal / totalUnitsNeeded) * 100) || 0;
+
+        document.getElementById('global-bar-actual').style.width = actualPercent + "%";
+        document.getElementById('global-bar-potential').style.width = potentialPercent + "%";
+        
+        document.getElementById('global-percent-actual').innerText = actualPercent + "%";
+        document.getElementById('global-percent-potential').innerText = potentialPercent + "%";
+    }
+
+    document.getElementById('username-input').value = localStorage.getItem('arc_username') || "";
+    const root = document.getElementById('tracker-root');
+
+    data.forEach((stage, sIdx) => {
+        let itemsHtml = "";
+        stage.items.forEach(item => {
+            const safeName = item.name.replace(/[^a-zA-Z0-9]/g, '-');
+            const savedTurned = localStorage.getItem(`turned-${safeName}`) || 0;
+            const savedHave = localStorage.getItem(`have-${safeName}`) || 0;
+
+            itemsHtml += `
+                <tr class="item-row" id="row-${safeName}">
+                    <td style="width: 54px;"><div class="icon-box"><img src="${item.img}"></div></td>
+                    <td>
+                        <div class="item-info">
+                            <span class="item-name">${item.name}</span>
+                            <span class="item-reward">${item.reward}</span>
+                            <div class="item-progress-mini"><div class="item-progress-fill" id="bar-${safeName}"></div></div>
+                        </div>
+                    </td>
+                    <td class="inputs-cell">
+                        <div class="input-group">
+                            <span class="input-label">Stash</span>
+                            <input type="number" id="have-${safeName}" value="${savedHave}" oninput="saveValue('have-${safeName}', this.value, ${sIdx})">
+                        </div>
+                        <button class="transfer-btn" onclick="moveItems('${safeName}', ${sIdx})">➔</button>
+                        <div class="input-group">
+                            <span class="input-label">Depot</span>
+                            <input type="number" id="turned-${safeName}" value="${savedTurned}" oninput="saveValue('turned-${safeName}', this.value, ${sIdx})">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">Goal</span>
+                            <span id="goal-${safeName}" style="font-weight: 900; color: var(--accent); font-size: 1.1rem; width: 30px; text-align: center;">${item.needed}</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        root.innerHTML += `<div class="stage-card stage-${sIdx}"><div class="stage-header"><div class="stage-title-row"><span class="stage-name">${stage.stage}</span><span class="stage-percent" id="stage-val-${sIdx}">0%</span></div><div class="progress-container"><div class="progress-fill" id="stage-progress-${sIdx}"></div></div></div><table class="item-table">${itemsHtml}</table></div>`;
+    });
+
+    data.forEach((_, idx) => updateProgress(idx));
+    updateGlobal();
+</script>
+</body>
+</html>
