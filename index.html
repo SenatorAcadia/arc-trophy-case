@@ -18,6 +18,7 @@
             --yellow: #ffcc00; 
             --border: #2d323d;
             --progress-bg: #1c1f26;
+            --reward-bg: #1e2128;
         }
 
         body {
@@ -136,30 +137,41 @@
         .item-table { width: 100%; border-collapse: collapse; }
         .item-row { border-bottom: 1px solid var(--border); }
         td { padding: 15px; vertical-align: middle; }
+        
         .icon-box { width: 54px; height: 54px; background: #000; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
         .icon-box img { width: 90%; height: 90%; object-fit: contain; }
+        
         .item-info { display: flex; flex-direction: column; }
         .item-name { font-weight: 700; color: #fff; transition: color 0.3s; }
-        .item-reward { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
         
+        /* Reward Styling */
+        .reward-tag {
+            display: inline-flex;
+            align-items: center;
+            background: var(--reward-bg);
+            border: 1px solid #2d323d;
+            border-radius: 4px;
+            padding: 2px 8px;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            width: fit-content;
+        }
+        .reward-label {
+            color: var(--accent);
+            font-weight: 900;
+            margin-right: 6px;
+            font-size: 0.6rem;
+            letter-spacing: 1px;
+        }
+        .reward-value { color: var(--green); font-weight: 600; }
+
         .inputs-cell { display: flex; gap: 15px; justify-content: flex-end; align-items: center; }
         .input-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .input-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; font-weight: 900; }
         
-        input[type="number"] { 
-            background: #1c1f26; 
-            border: 1px solid var(--border); 
-            color: #fff; 
-            width: 45px; 
-            padding: 8px 4px; 
-            border-radius: 4px; 
-            text-align: center; 
-            font-size: 1rem; 
-            font-weight: 900; 
-        }
+        input[type="number"] { background: #1c1f26; border: 1px solid var(--border); color: #fff; width: 45px; padding: 8px 4px; border-radius: 4px; text-align: center; font-size: 1rem; font-weight: 900; }
         input::-webkit-inner-spin-button { display: none; }
         
-        /* Transfer Arrow Styling */
         .transfer-btn {
             background: transparent;
             border: 1px solid #333;
@@ -322,7 +334,6 @@
                 const have = parseInt(localStorage.getItem(`have-${safeName}`)) || 0;
                 
                 totalUnitsNeeded += item.needed;
-                // Cap progress at the goal so extra items don't break the bar %
                 unitsInDepot += Math.min(turned, item.needed);
                 unitsInTotal += Math.min((turned + have), item.needed);
             });
@@ -354,7 +365,10 @@
                     <td>
                         <div class="item-info">
                             <span class="item-name">${item.name}</span>
-                            <span class="item-reward">${item.reward}</span>
+                            <div class="reward-tag">
+                                <span class="reward-label">REWARD</span>
+                                <span class="reward-value">${item.reward}</span>
+                            </div>
                             <div class="item-progress-mini"><div class="item-progress-fill" id="bar-${safeName}"></div></div>
                         </div>
                     </td>
